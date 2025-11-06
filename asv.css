@@ -1,0 +1,7 @@
+
+body{background:#0b1217;color:#eaf6ff;font-family:Inter, sans-serif;margin:0;padding:0;}
+.topbar{display:flex;gap:12px;align-items:center;padding:12px;background:#101a21;}
+.chip,.cta{padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);cursor:pointer;}
+.cta{background:#22d3c5;color:#032024;font-weight:700;border:none;}
+.grid{padding:16px;display:grid;gap:16px;}
+.card{background:#101a21;padding:16px;border-radius:12px;border:1px solid rgba(255,255,255,.1);}
