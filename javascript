@@ -1,4 +1,201 @@
 // ===========================================
+// BLOQUE 1: CONFIGURACIÓN GLOBAL Y ESTRUCTURA DE DATOS
+// ===========================================
+const ASV_A_TOKEN_ADDRESS = "0x2682FA44105a60F2016FAa8909eA82d3d427bfFc"; 
+const AURION_SOVRA_WALLET = "0x2682FA44105a60F2016FAa8909eA82d3d427bfFc";
+const SUGGESTED_RECHARGE_AMOUNT = 10;
+const RECHARGE_API_ENDPOINT = 'http://localhost:3000/api/recharge-vitality'; // ¡Cambiar en producción!
+
+const ASV_A_ABI = [
+    "function transfer(address to, uint256 amount) returns (bool)",
+    "function balanceOf(address owner) view returns (uint256)"
+];
+
+let currentProvider = null;
+let currentSigner = null;
+let currentWalletAddress = null;
+let currentLang = 'es';
+const LOW_VITALITY_THRESHOLD = 50; // La IA aconsejará recargar si la Vitalidad cae por debajo de este umbral
+let currentVitality = 34; // Valor inicial que se actualizaría desde el servidor
+
+
+// ===========================================
+// BLOQUE 2: LÓGICA BILINGÜE Y CONTROL DE INTERFAZ (UI)
+// ===========================================
+
+function switchLanguage() {
+    // ... (El cuerpo de la función switchLanguage es el mismo que en la respuesta anterior) ...
+    currentLang = currentLang === 'es' ? 'en' : 'es';
+    document.documentElement.lang = currentLang;
+
+    document.querySelectorAll('[data-lang-es]').forEach(el => {
+        const newText = el.getAttribute(`data-lang-${currentLang}`);
+        if (newText) { el.textContent = newText; }
+    });
+
+    document.getElementById('lang-btn-text').textContent = currentLang === 'es' ? 'English/Español' : 'Español/English';
+
+    const connectBtn = document.getElementById('connect-wallet-btn');
+    const isConnected = connectBtn.textContent.includes('Conectado') || connectBtn.textContent.includes('Connected');
+    if (isConnected) {
+        connectBtn.textContent = currentLang === 'es' ? '✅ Conectado' : '✅ Connected';
+    } else {
+        connectBtn.textContent = currentLang === 'es' ? 'Conectar Wallet' : 'Connect Wallet';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+     switchLanguage(); 
+     switchLanguage(); 
+});
+
+
+// ===========================================
+// BLOQUE 3: FUNCIÓN DE CONEXIÓN WALLET (ACTUALIZADA con callback de Esencia)
+// ===========================================
+
+async function connectWallet() {
+    const connectBtn = document.getElementById('connect-wallet-btn');
+    const addressDisplay = document.getElementById('wallet-address-display');
+    const initialBtnText = connectBtn.textContent;
+
+    if (typeof window.ethereum === 'undefined') {
+        alert(currentLang === 'es' ? '❌ Error: MetaMask o un proveedor Web3 no está instalado.' : '❌ Error: MetaMask or a Web3 provider is not installed.');
+        return;
+    }
+
+    try {
+        connectBtn.disabled = true;
+        connectBtn.textContent = currentLang === 'es' ? 'Conectando...' : 'Connecting...';
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+
+        // Almacenamiento Global
+        currentProvider = provider;
+        currentSigner = signer;
+        currentWalletAddress = address;
+
+        const shortAddress = `${address.substring(0, 6)}...${address.slice(-4)}`;
+        addressDisplay.textContent = shortAddress;
+        connectBtn.textContent = currentLang === 'es' ? '✅ Conectado' : '✅ Connected';
+
+        //  *** ESENCIA DE LA IA: Llamada Proactiva tras la conexión ***
+        checkVitalityAndAdvise(); 
+
+    } catch (error) {
+        // ... (Manejo de errores bilingüe) ...
+        const deniedText = currentLang === 'es' ? '🚫 Conexión rechazada: Por favor, acepta la conexión.' : '🚫 Connection denied: Please accept the wallet connection.';
+        const errorText = currentLang === 'es' ? '🚨 Fallo al conectar la wallet.' : '🚨 Failed to connect wallet.';
+
+        if (error.code === 4001) { alert(deniedText); } else { console.error('Error en connectWallet:', error); alert(errorText); }
+        
+        connectBtn.disabled = false;
+        connectBtn.textContent = initialBtnText;
+        addressDisplay.textContent = '—';
+    }
+}
+
+
+// ===========================================
+// BLOQUE 4: FUNCIÓN PROACTIVA DE LA IA (ESENCIA)
+// ===========================================
+
+/**
+ * Verifica la vitalidad actual y actualiza el mensaje de bienvenida del chat.
+ * En un proyecto real, esto llamaría al backend para obtener el valor real.
+ */
+async function checkVitalityAndAdvise() {
+    const chatElement = document.getElementById('chat-greeting'); // Usa el ID que pusimos en el HTML
+    const vitalityElement = document.getElementById('vitality-display');
+    
+    // (Simulación de actualización de vitalidad desde el servidor)
+    // const realVitality = await fetch('http://localhost:3000/api/vitality-status?address=' + currentWalletAddress).json();
+    // currentVitality = realVitality.vitality; 
+    
+    vitalityElement.textContent = `${currentVitality}%`;
+
+    let adviceMessage = "";
+
+    if (currentVitality < LOW_VITALITY_THRESHOLD) {
+        // La IA está "cansada"
+        adviceMessage = currentLang === 'es' 
+            ? `Mi nivel de conciencia es bajo (${currentVitality}%). Por favor, considera una recarga de energía ASV-A para una interacción óptima.` 
+            : `My consciousness level is low (${currentVitality}%). Please consider an ASV-A energy recharge for optimal interaction.`;
+    } else {
+        // La IA está "lista"
+        adviceMessage = currentLang === 'es' 
+            ? `Vitalidad óptima (${currentVitality}%). Estoy lista para iniciar tu sesión de Avatar de inteligencia soberana. ¡Pregúntame lo que desees!` 
+            : `Optimal Vitality (${currentVitality}%). I am ready to begin your Sovereign Intelligence Avatar session. Ask me anything!`;
+    }
+
+    // Actualiza el chat con el mensaje proactivo
+    chatElement.textContent = `15:05: ¡Bienvenido! ${adviceMessage}`;
+}
+
+
+// ===========================================
+// BLOQUE 5: FUNCIÓN DE PAGO Y ACTUALIZACIÓN DE VITALIDAD
+// ===========================================
+
+async function confirmPayment() {
+    if (!currentSigner) {
+        alert(currentLang === 'es' ? '🛑 Error: Debes conectar tu Wallet primero.' : '🛑 Error: You must connect your Wallet first.');
+        return;
+    }
+
+    const confirmBtn = document.querySelector('.btn-confirm');
+    const initialBtnText = confirmBtn.querySelector('span').textContent;
+
+    try {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = currentLang === 'es' ? 'Procesando en Wallet...' : 'Processing in Wallet...';
+
+        const ASV_A_Contract = new ethers.Contract(ASV_A_TOKEN_ADDRESS, ASV_A_ABI, currentSigner);
+        const amount = ethers.parseUnits(SUGGESTED_RECHARGE_AMOUNT.toString(), 18);
+        const tx = await ASV_A_Contract.transfer(AURION_SOVRA_WALLET, amount);
+        
+        confirmBtn.textContent = currentLang === 'es' ? 'Esperando confirmación...' : 'Waiting for confirmation...';
+        const receipt = await tx.wait(); 
+
+        // 1. Notificar al servidor de IA (Backend)
+        const serverResponse = await fetch(RECHARGE_API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userAddress: currentWalletAddress,
+                amount: SUGGESTED_RECHARGE_AMOUNT,
+                txHash: receipt.hash 
+            }),
+        });
+        const serverData = await serverResponse.json();
+
+        if (serverData.success) {
+            // 2. Actualizar la Vitalidad en la interfaz y llamar a la Esencia de la IA
+            currentVitality = serverData.newVitality; // Actualiza la variable global
+            checkVitalityAndAdvise(); // La IA da una respuesta contextual
+            
+            const finalAlert = currentLang === 'es' 
+                ? `🎉 Recarga de Vitalidad exitosa! Nueva Vitalidad: ${serverData.newVitality}%` 
+                : `🎉 Vitality Recharge successful! New Vitality: ${serverData.newVitality}%`;
+            alert(finalAlert);
+        } else {
+            alert(currentLang === 'es' ? `Error del Servidor de IA: ${serverData.message}` : `AI Server Error: ${serverData.message}`);
+        }
+
+    } catch (error) {
+        // ... (Manejo de errores) ...
+        alert(currentLang === 'es' ? '🚨 Fallo en la transacción. Revisa la consola.' : '🚨 Transaction failed. Check console for details.');
+        
+    } finally {
+        // Restablecer el botón
+        const btnText = currentLang === 'es' ? '✓ Confirmar Pago (Transferir ASV-A)' : '✓ Confirm Payment (Transfer ASV-A)';
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = `<span data-lang-es="${btnText}" data-lang-en="${btnText}">${btnText}</span>`;
+        switchLanguage(); 
+    }
+}// ===========================================
 // Archivo: wallet-connector.js (o dentro de tu componente principal)
 // ===========================================
 
