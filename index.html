@@ -442,4 +442,230 @@ setVitality(state.vitality);
 $('state').textContent='conciencia activa';
 </script>
 </body>
+</<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ASV · Canvas Wrap UI</title>
+<style>
+  :root{
+    --bg:#0e1117; --panel:#161b22; --panel-2:#131821; --text:#e6edf3; --muted:#aab8c5;
+    --line:#263041; --accent:#22d3ee; --accent-2:#34d399; --chip:#2b3342; --danger:#ef4444;
+    --btn:#1f2937; --btn-2:#0ea5b3;
+    --radius:14px; --shadow:0 14px 40px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{
+    margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; color:var(--text);
+    background: radial-gradient(900px 300px at 15% -5%, rgba(34,211,238,.06), transparent) , var(--bg);
+    -webkit-font-smoothing:antialiased; line-height:1.35;
+  }
+  .shell{max-width:1024px;margin:32px auto;padding:0 18px;display:grid;gap:18px}
+  .card{
+    background:linear-gradient(180deg, var(--panel), var(--panel-2));
+    border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .card-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:14px 16px; border-bottom:1px dashed var(--line);
+  }
+  .card-head .title{font-size:22px; font-weight:800; letter-spacing:.2px}
+  .chip{background:var(--chip); color:#cfe7ff; border:1px solid var(--line);
+        font-size:12px; padding:6px 10px; border-radius:999px}
+  .winbar{display:flex; gap:8px; align-items:center}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .dot.x{background:#ef4444}.dot.m{background:#f59e0b}.dot.v{background:#22c55e}
+  .body{padding:16px}
+  .row{display:flex; gap:14px; align-items:center}
+  .right{margin-left:auto}
+  .btn{
+    background:var(--btn); border:1px solid var(--line); color:var(--text);
+    padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer;
+  }
+  .btn.primary{background:var(--btn-2); color:#052229; border:none}
+  .btn.wallet{background:linear-gradient(90deg, var(--accent), var(--accent-2)); color:#032126; border:none}
+  .btn:active{transform:translateY(1px)}
+  /* section: canvas-wrap (glow + code-like) */
+  .code-wrap{position:relative; border-radius:12px; overflow:hidden; border:1px solid var(--line)}
+  .glow{
+    position:absolute; inset:-40% -20% auto -20%; height:360px; pointer-events:none;
+    background: radial-gradient(closest-side, rgba(34,211,238,.25), rgba(34,211,238,.08) 45%, transparent 60%),
+                radial-gradient(closest-corner, rgba(52,211,153,.14), transparent 60%);
+    filter: blur(6px);
+    animation: pulse 6s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:.55; transform:scale(1)}50%{opacity:.85; transform:scale(1.03)}}
+  pre{
+    margin:0; padding:18px 16px 16px; background:transparent; color:#c7d3e0; font:600 13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    white-space:pre-wrap; word-break:break-word;
+  }
+  .key{color:#79c0ff} .num{color:#a5d6ff} .str{color:#7ee787} .prop{color:#c9d1d9}
+  .grid{display:grid; grid-template-columns:1fr; gap:18px}
+  /* section: payments (chat) */
+  .pay-chat{display:grid; grid-template-columns:1fr 250px; gap:16px}
+  @media (max-width:860px){.pay-chat{grid-template-columns:1fr}}
+  .field{
+    background:#0f1420; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .field input, .field select{
+    background:transparent; border:none; outline:none; color:var(--text); flex:1; font-weight:700
+  }
+  .muted{color:var(--muted); font-size:12px}
+  .progress{
+    height:9px; background:#0d1320; border:1px solid var(--line); border-radius:999px; overflow:hidden
+  }
+  .progress > div{height:100%; width:38%; background:linear-gradient(90deg, var(--accent), var(--accent-2))}
+  .avatar{
+    border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#0c121c; aspect-ratio:1/1;
+    display:flex; align-items:center; justify-content:center
+  }
+  .avatar img{width:100%; height:100%; object-fit:cover; display:block}
+  /* section: pay-form */
+  .form{display:grid; gap:10px}
+  .form .rowi{display:grid; grid-template-columns:160px 1fr; gap:10px; align-items:center}
+  .form input{
+    background:#0f1420; border:1px solid var(--line); color:var(--text); padding:10px 12px; border-radius:10px; width:100%; font-weight:700
+  }
+  .foot{display:flex; gap:10px; justify-content:flex-end; padding-top:10px}
+  /* separators like in screenshot */
+  .sep{height:1px; background:repeating-linear-gradient(90deg, #2a3342 0 12px, transparent 12px 20px); opacity:.6}
+  .title-sec{font-size:22px; font-weight:900; margin:4px 0 10px}
+</style>
+</head>
+<body>
+  <main class="shell">
+
+    <!-- ===== Canvas Wrap ===== -->
+    <section class="card">
+      <div class="card-head">
+        <div class="row">
+          <span class="title">canvas-wrap</span>
+          <span class="chip">CAᵥ</span>
+        </div>
+        <div class="row">
+          <div class="winbar">
+            <span class="dot x"></span><span class="dot m"></span><span class="dot v"></span>
+          </div>
+          <button class="btn">Btn</button>
+          <button class="btn primary">Primary</button>
+        </div>
+      </div>
+      <div class="body">
+        <div class="code-wrap">
+          <div class="glow" aria-hidden="true"></div>
+<pre><span class="key">Chat Head</span> {
+
+  <span class="prop">window</span>: <span class="num">&lt;1024&gt;</span>
+  <span class="prop">fonts</span>: <span class="str">"Inter, Segoe UI, Arial, sans"</span>
+
+  <span class="key">msg</span> {
+    <span class="str">"Inter f(x)1200×300s at Segots at lal, Rologf, sanss eoto 16"</span>
+    <span class="muted">/* the code block visual w/ teal glow */</span>
+
+    <span class="key">History</span> (
+      <span class="str">"The malt Case malxbted maerne (25.06)"</span>
+      <span class="str">"Tun tnnt madn 1.6s, card ore in m00be 213 (4.13)"</span>
+    )
+  }
+}</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Payments (Chat) ===== -->
+    <section class="card">
+      <div class="card-head">
+        <div class="title">Payments</div>
+        <div class="row">
+          <span class="chip">Access ▸</span>
+        </div>
+      </div>
+      <div class="body">
+        <div class="title-sec">Chat</div>
+        <div class="pay-chat">
+          <div>
+            <div class="muted" style="margin-bottom:8px">History &gt; 10.8%</div>
+            <div class="field">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 4h16v12H7l-3 3V4z" stroke="#7dd3fc" stroke-width="1.5"/>
+              </svg>
+              <input id="chatField" value="Het efie on vieart" aria-label="prompt">
+              <select id="chatMode" aria-label="mode">
+                <option>•</option><option>◦</option><option selected>⟡</option>
+              </select>
+            </div>
+            <div class="progress" style="margin:10px 0 6px">
+              <div id="bar"></div>
+            </div>
+            <div class="muted">Deslice para variar la energía</div>
+            <input type="range" id="slider" min="0" max="100" value="38"
+                   style="width:100%;margin-top:8px" aria-label="energy"/>
+          </div>
+          <figure class="avatar">
+            <!-- Reemplaza AVATAR_URL_AQUI por tu imagen (IPFS, GitHub raw, etc.) -->
+            <img id="avatar" src="AVATAR_URL_AQUI" alt="ASV Avatar"/>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Payments (Form) ===== -->
+    <section class="card">
+      <div class="card-head">
+        <div class="title">Payments</div>
+      </div>
+      <div class="body">
+        <div class="sep"></div>
+        <h3 class="title-sec" style="margin-top:12px">Pay-Form</h3>
+        <form class="form" onsubmit="return false">
+          <div class="rowi">
+            <label class="muted">Reante</label>
+            <input id="inp-amount" value="10 ets" />
+          </div>
+          <div class="rowi">
+            <label class="muted">Colo Success</label>
+            <input id="inp-success" value="Tnpator tay" />
+          </div>
+          <div class="rowi">
+            <label class="muted">Warning setts 11.56</label>
+            <input id="inp-warn" value="Toas for tay" />
+          </div>
+          <div class="foot">
+            <button class="btn">Btn</button>
+            <button class="btn wallet">Wallet ▸</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+  // Pequeñas interacciones para la demo visual
+  const slider = document.getElementById('slider');
+  const bar = document.getElementById('bar');
+  const avatar = document.getElementById('avatar');
+
+  function setBar(v){
+    const pct = Math.max(0, Math.min(100, Number(v)||0));
+    bar.style.width = pct + '%';
+    // del teal al verde
+    bar.style.background = `linear-gradient(90deg, rgba(34,211,238,1), rgba(52,211,153,${0.6 + 0.4*(pct/100)}))`;
+    // titileo sutil en el avatar
+    avatar.style.filter = `drop-shadow(0 0 ${4 + pct/12}px rgba(34,211,238,.65))`;
+  }
+  slider.addEventListener('input', e => setBar(e.target.value));
+  setBar(slider.value);
+
+  // Si no se reemplaza la URL del avatar, usamos un degradado de reserva.
+  avatar.addEventListener('error', ()=>{
+    avatar.removeAttribute('src');
+    avatar.style.background =
+      'radial-gradient(closest-side, rgba(34,211,238,.25), rgba(34,211,238,.06) 55%, transparent 60%), linear-gradient(180deg,#0c121c,#0a1018)';
+  });
+</script>
+</body>
 </html>
