@@ -1,4 +1,58 @@
-// ========= VOZ (Web Speech API) - CONTINUACIÓN =========
+// ===========================================
+// Archivo: wallet-connector.js (o dentro de tu componente principal)
+// ===========================================
+
+// Suponiendo que tienes un elemento en tu HTML para mostrar la dirección de la wallet:
+// <span id="wallet-address">Wallet: —</span>
+// <button id="connect-button" onclick="connectWallet()">Conectar Wallet</button>
+
+// Importar ethers.js (si usas módulos)
+// import { ethers } from 'ethers'; 
+
+// Función principal para conectar la wallet
+async function connectWallet() {
+    // 1. Verificar si MetaMask/proveedor está instalado
+    if (typeof window.ethereum === 'undefined') {
+        alert('❌ MetaMask o un proveedor Web3 compatible no está instalado. Instálalo para continuar.');
+        return;
+    }
+
+    try {
+        // 2. Solicitar acceso a las cuentas de usuario
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        
+        // 3. Obtener la dirección principal
+        const userAddress = accounts[0];
+
+        // 4. Inicializar el proveedor y el firmante
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+
+        // 5. Éxito: Actualizar el estado de la aplicación/Interfaz de Usuario
+        document.getElementById('wallet-address').textContent = `Wallet: ${userAddress.substring(0, 6)}...${userAddress.slice(-4)}`;
+        document.getElementById('connect-button').textContent = '✅ Conectado';
+        
+        // Opcional: Deshabilitar el botón de conexión
+        document.getElementById('connect-button').disabled = true;
+
+        // **IMPORTANTE:** Aquí deberías guardar 'signer' y 'provider' en el estado global
+        // de tu aplicación para usarlos en transacciones futuras (Recargar ASV-A).
+        
+        console.log('🎉 Conexión exitosa. Dirección:', userAddress);
+
+    } catch (error) {
+        // 6. Manejo de Errores (Si el usuario rechaza la conexión o hay otro fallo)
+        if (error.code === 4001) {
+            alert('🚫 Permiso denegado: Por favor, acepta la conexión de la wallet para usar ASV-A.');
+        } else {
+            console.error('Error al conectar la wallet:', error);
+            alert('🚨 Fallo inesperado al conectar la wallet. Consulta la consola.');
+        }
+        // Restablecer el estado del botón si falló
+        document.getElementById('connect-button').textContent = 'Conectar Wallet';
+        document.getElementById('connect-button').disabled = false;
+    }
+}// ========= VOZ (Web Speech API) - CONTINUACIÓN =========
 function speak(text){
   if(!('speechSynthesis' in window)) return;
   state.isSpeaking = true;
