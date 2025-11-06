@@ -1,38 +1,54 @@
-<!doctype html><div class="avatar-container">
-    <img id="asv-avatar" src="./avatar.png" alt="ASV Avatar">
-</div>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AURION SOVRA AI</title>
-<link rel="stylesheet" href="asv.css">
+<title>ASV-DApp • AURION SOVRA AI</title>
+<link rel="stylesheet" href="styles/main.css">
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 <header class="topbar">
-  <span id="lang-btn-text" class="chip" onclick="switchLanguage()">English/Español</span>
-  <button id="connect-wallet-btn" class="cta">Conectar Wallet</button>
-  <span id="wallet-address-display">—</span>
+<strong>ASV‑DApp</strong><span class="muted">AURION SOVRA AI • BNB</span>
+<button id="connectBtn" class="btn primary">Conectar Wallet</button>
 </header>
 
-<main class="grid">
-  <section class="card">
-    <h2>Estado</h2>
-    <p id="chat-greeting"></p>
-    <p>Vitalidad: <span id="vitality-display">--%</span></p>
-  </section>
+<main class="container">
+<section class="card">
+<h2>Wallet</h2>
+<p><b>Cuenta:</b> <span id="account">—</span></p>
+<p><b>Red:</b> <span id="network">—</span></p>
+<p><b>BNB:</b> <span id="nativeBalance">—</span></p>
+<p><b>ASV-A:</b> <span id="tokenBalance">—</span></p>
+</section>
 
-  <section class="card">
-    <h2>Recarga</h2>
-    <button class="btn-confirm cta" onclick="confirmPayment()">
-      <span data-lang-es="✓ Confirmar Pago (Transferir ASV-A)" data-lang-en="✓ Confirm Payment (Transfer ASV-A)">
-        ✓ Confirmar Pago (Transferir ASV-A)
-      </span>
-    </button>
-  </section>
+<section class="card">
+<h2>Vitalidad</h2>
+<div id="vitalityValue">--%</div>
+<div id="vitalityBar"><span></span></div>
+</section>
+
+<section class="card">
+<h2>Enviar ASV‑A</h2>
+<input id="amount" placeholder="Cantidad ASV-A">
+<button id="sendBtn" class="btn primary">Enviar</button>
+</section>
+
+<section class="card">
+<h2>ASV Essence</h2>
+<textarea id="essenceInput" placeholder="Háblame..."></textarea>
+<p id="essenceOutput" class="essence"></p>
+</section>
+
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-<script src="asv.js"></script>
+<script src="js/config.js"></script>
+<script src="js/erc20.js"></script>
+<script src="js/asv.js"></script>
+<script src="js/asv_essence_core.js"></script>
+<script>
+ASV_ESSENCE.integrar("essenceInput","essenceOutput");
+</script>
+
 </body>
 </html>

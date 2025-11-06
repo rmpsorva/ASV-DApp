@@ -1,0 +1,9 @@
+body{background:#0b0f14;color:#e9eef4;font-family:Inter,Arial}
+.topbar{padding:12px;background:#111;border-bottom:1px solid #333;display:flex;justify-content:space-between}
+.btn{padding:8px 14px;border-radius:8px;background:#163a58;border:1px solid #285a8a;color:#fff}
+.container{max-width:900px;margin:20px auto;padding:10px}
+.card{background:#111;border:1px solid #333;padding:16px;margin-bottom:16px;border-radius:12px}
+#vitalityBar{width:100%;height:10px;background:#222;border:1px solid #333;border-radius:999px;overflow:hidden;margin-top:8px}
+#vitalityBar span{display:block;height:100%;background:#39c7f7;width:0%}
+textarea{width:100%;height:90px;background:#0f141a;color:#e9eef4;border:1px solid #333;border-radius:8px;padding:8px}
+.essence{opacity:0.85;margin-top:8px;white-space:pre-line;font-style:italic}
