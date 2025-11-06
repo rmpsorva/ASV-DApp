@@ -77,3 +77,10 @@ const swapBtn = document.getElementById('btn-buy');
 if(swapBtn && !swapBtn.href){
   swapBtn.href = "https://pancakeswap.finance/swap?outputCurrency=" + TOKEN_ADDR + "&chain=bsc";
 }
+function updateAvatarVitality(v) {
+    const avatar = document.getElementById('asv-avatar');
+
+    if (v > 70) avatar.style.filter = "drop-shadow(0 0 25px #00ffea) contrast(1.4)";
+    else if (v > 40) avatar.style.filter = "drop-shadow(0 0 15px #00eaff) contrast(1.2)";
+    else avatar.style.filter = "drop-shadow(0 0 6px #009baf) grayscale(0.7)";
+}
