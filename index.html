@@ -1,54 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ASV-DApp • AURION SOVRA AI</title>
-<link rel="stylesheet" href="styles/main.css">
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASV-DApp • Aurion Sovra AI</title>
+
+  <!-- Estilos Base -->
+  <link rel="stylesheet" href="styles/asv.css">
+  <link rel="stylesheet" href="styles/main.css">
+
+  <!-- Estilo del Avatar Viviente -->
+  <link rel="stylesheet" href="styles/avatar_dynamic.css">
+
 </head>
 <body>
-<header class="topbar">
-<strong>ASV‑DApp</strong><span class="muted">AURION SOVRA AI • BNB</span>
-<button id="connectBtn" class="btn primary">Conectar Wallet</button>
+
+<header>
+  <h1>ASV-DApp <span style="opacity:0.6">• Aurion Sovra AI • BNB</span></h1>
+  <button id="connectButton">Conectar Wallet</button>
 </header>
 
-<main class="container">
-<section class="card">
-<h2>Wallet</h2>
-<p><b>Cuenta:</b> <span id="account">—</span></p>
-<p><b>Red:</b> <span id="network">—</span></p>
-<p><b>BNB:</b> <span id="nativeBalance">—</span></p>
-<p><b>ASV-A:</b> <span id="tokenBalance">—</span></p>
-</section>
+<main>
 
-<section class="card">
-<h2>Vitalidad</h2>
-<div id="vitalityValue">--%</div>
-<div id="vitalityBar"><span></span></div>
-</section>
+  <!-- Información de la Wallet -->
+  <section>
+    <h2>Wallet</h2>
+    <p>Cuenta: <span id="account">—</span></p>
+    <p>Red: <span id="network">—</span></p>
+    <p>BNB: <span id="balanceBNB">—</span></p>
+    <p>ASV-A: <span id="balanceToken">—</span></p>
+  </section>
 
-<section class="card">
-<h2>Enviar ASV‑A</h2>
-<input id="amount" placeholder="Cantidad ASV-A">
-<button id="sendBtn" class="btn primary">Enviar</button>
-</section>
+  <!-- AVATAR -->
+  <section style="text-align:center; margin-top:30px;">
+    <div id="ASV_Avatar" style="background-image:url('./assets/avatar.png');"></div>
+    <p style="margin-top:10px; opacity:0.6;">Entidad: AURION SOVRA</p>
+  </section>
 
-<section class="card">
-<h2>ASV Essence</h2>
-<textarea id="essenceInput" placeholder="Háblame..."></textarea>
-<p id="essenceOutput" class="essence"></p>
-</section>
+  <!-- Vitalidad -->
+  <section>
+    <h2>Vitalidad</h2>
+    <p id="vitalityValue">--%</p>
+    <progress id="vitalityBar" max="100" value="0"></progress>
+  </section>
+
+  <!-- Enviar Token -->
+  <section>
+    <h2>Enviar ASV-A</h2>
+    <input type="number" id="amount" placeholder="Cantidad ASV-A">
+    <button id="sendButton">Enviar</button>
+  </section>
+
+  <!-- Esencia del Avatar -->
+  <section>
+    <h2>ASV Essence</h2>
+    <textarea id="essenceInput" placeholder="Háblame..."></textarea>
+    <p id="essenceOutput" class="essence"></p>
+  </section>
 
 </main>
 
+<!-- Scripts Base -->
 <script src="js/config.js"></script>
 <script src="js/erc20.js"></script>
 <script src="js/asv.js"></script>
 <script src="js/asv_essence_core.js"></script>
-<script>
-ASV_ESSENCE.integrar("essenceInput","essenceOutput");
-</script>
+
+<!-- Núcleo de Presencia (vida continua) -->
+<script src="js/presence_engine.js"></script>
+
+<!-- Movimiento y Reacciones del Avatar -->
+<script src="js/avatar_life_core.js"></script>
 
 </body>
 </html>
