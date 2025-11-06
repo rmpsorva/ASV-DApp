@@ -1,6 +1,112 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <meta charset="UTF-8" />
+  <title>ASV-DApp — Avatar Vivo + Swap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./styles/ui-theme.css">
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+</head>
+<body>
+
+  <main class="shell" style="max-width:1080px; margin:40px auto; padding:0 16px;">
+    <!-- ===== Canvas Wrap / Chat Head ===== -->
+    <section class="card">
+      <div class="card-head">
+        <div class="title">canvas-wrap</div>
+        <div class="chip">ASV-A • BNB Chain</div>
+      </div>
+
+      <div class="glow-center"></div>
+
+      <div style="display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;">
+        <div>
+          <div class="title" style="font-size:20px;margin-bottom:6px;">Chat Head</div>
+          <div class="muted" style="opacity:.8;margin-bottom:10px;">Interfaz − microgestos y estado</div>
+
+          <div class="progress" style="max-width:520px;margin:10px 0 12px;">
+            <div id="bar"></div>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn" id="btn-theme">Tema</button>
+            <button class="btn primary" id="btn-pulse">Pulso +10%</button>
+            <button class="btn wallet" id="btn-connect">Conectar Wallet</button>
+          </div>
+
+          <div style="margin-top:10px;color:#9aa6b8" id="addr-label">Wallet: —</div>
+        </div>
+
+        <img src="./assets/avatar.png" alt="ASV Avatar" style="width:150px;height:150px;border-radius:12px;border:1px solid var(--line);object-fit:cover;">
+      </div>
+    </section>
+
+    <!-- ===== Payments • Chat  ===== -->
+    <section class="card">
+      <div class="card-head">
+        <div class="title">Payments</div>
+        <div class="chip">Chat</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 180px;gap:16px;align-items:start;">
+        <div>
+          <input id="chat-input" class="input" placeholder="Escribe… (p. ej. 'recargar')" maxlength="240">
+          <div class="progress" style="margin-top:10px;">
+            <div id="chat-bar" style="width:28%"></div>
+          </div>
+          <div style="margin-top:10px;color:#9aa6b8;font-size:13px">Historial &gt; Interacción reciente</div>
+        </div>
+        <img src="./assets/avatar.png" alt="ASV face" style="width:180px;height:180px;border-radius:12px;border:1px solid var(--line);object-fit:cover;">
+      </div>
+    </section>
+
+    <!-- ===== Pay-Form ===== -->
+    <section class="card">
+      <div class="card-head">
+        <div class="title">Payments</div>
+        <div class="chip">Pay-Form</div>
+      </div>
+
+      <div style="display:grid;gap:12px;max-width:720px;">
+        <label style="display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;">
+          <span class="muted">Recarga sugerida</span>
+          <input id="amount" class="input" value="10">
+        </label>
+
+        <label style="display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;">
+          <span class="muted">Razón</span>
+          <input id="reason" class="input" value="Recarga de Vitalidad">
+        </label>
+
+        <label style="display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;">
+          <span class="muted">Destinatario</span>
+          <input id="to" class="input" value="0x2682FA44105a60F2016FAa8909eA82d3d427bfFc">
+        </label>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;">
+          <button class="btn" id="btn-send">Enviar (ASV-A)</button>
+          <a class="btn wallet" id="btn-buy" target="_blank" rel="noopener">Comprar ASV-A (Swap)</a>
+        </div>
+
+        <div class="muted" style="color:#9aa6b8;font-size:13px">
+          • El botón <b>Comprar ASV-A (Swap)</b> abre PancakeSwap con el token precargado.  
+          • <b>Enviar (ASV-A)</b> usa tu wallet para transferir tokens al destinatario.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // ===== Config =====
+    const TOKEN_ADDR = "0x2682FA44105a60F2016FAa8909eA82d3d427bfFc";
+    const SWAP_URL  = "https://pancakeswap.finance/swap?outputCurrency=" + TOKEN_ADDR + "&chain=bsc";
+    document.getElementById('btn-buy').href = SWAP_URL;
+  </script>
+  <script src="./js/asv-ui.js"></script>
+</body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
 <meta charset="UTF-8" />
 <title>ASV DApp — Avatar Vivo AURION SOVRA</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
