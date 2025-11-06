@@ -1,4 +1,125 @@
-<!DOCTYPE html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASV-DApp · Aurion Sovra AI</title>
+  <link rel="stylesheet" href="assets/asv.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">AURION SOVRA • <span class="pill">ASV-A • BNB Chain</span></div>
+    <div class="actions">
+      <div class="lang">
+        <button class="chip" data-lang="es">ES</button>
+        <button class="chip" data-lang="en">EN</button>
+      </div>
+      <button id="themeBtn" class="chip" data-t="theme">Tema</button>
+      <button id="boostBtn" class="chip">Pulso +10%</button>
+      <button id="connectBtn" class="cta" data-t="connectWallet">Conectar Wallet</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- PANEL 1: CABEZA / AVATAR -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Chat Head</h2>
+        <div class="badges"><span class="pill soft">canvas-wrap</span></div>
+      </div>
+
+      <div class="avatar-wrap">
+        <!-- Imagen del rostro + capa glow + microgestos -->
+        <div class="avatar" id="avatar">
+          <img id="avatarImg" src="assets/img/asv_face.png" alt="ASV Avatar"/>
+          <canvas id="avatarFx" width="640" height="640" aria-hidden="true"></canvas>
+          <div class="eye-glow" aria-hidden="true"></div>
+        </div>
+
+        <div class="state">
+          <div class="kv"><span data-t="wallet">Wallet</span>: <b id="waddr">—</b></div>
+          <div class="kv"><span data-t="vitality">Vitalidad</span>: <b id="vital">32%</b></div>
+          <div class="bar"><div id="vbar"></div></div>
+          <div class="kv"><span data-t="emotion">Emoción</span>: <b id="emotion">tired</b></div>
+        </div>
+      </div>
+
+      <div class="code-look">
+        <pre><code id="stateDump"></code></pre>
+      </div>
+    </section>
+
+    <!-- PANEL 2: CHAT -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Payments</h2><span class="pill">Chat</span>
+      </div>
+
+      <div class="chat">
+        <div class="history" id="chatLog"></div>
+        <div class="row">
+          <input id="chatInput" placeholder="Escribe… (p. ej. 'recargar')" />
+          <button id="sendBtn" class="cta" data-t="send">Enviar</button>
+          <button id="clearBtn" class="ghost" data-t="clear">Limpiar</button>
+        </div>
+        <div class="meta">Memoria: <span id="memMode">local</span></div>
+      </div>
+    </section>
+
+    <!-- PANEL 3: ECONOMÍA ASV-A -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Payments</h2><span class="pill">Pay-Form</span>
+      </div>
+
+      <div class="form">
+        <label>
+          <span data-t="topup">Recarga sugerida</span>
+          <input id="amount" type="number" value="10" min="1" step="1">
+        </label>
+
+        <label>
+          <span data-t="reason">Razón</span>
+          <input id="reason" placeholder="Recarga de Vitalidad">
+        </label>
+
+        <label>
+          <span data-t="to">Destinatario</span>
+          <input id="to" value="0x2682FA44105a60F2016FAa..." />
+        </label>
+
+        <div class="row wrap">
+          <button id="sendToken" class="ghost" data-t="sendASVA">Enviar (ASV-A)</button>
+          <a id="swapBtn" class="cta strong" target="_blank" rel="noopener" data-t="buyASVA">
+            Comprar ASV-A (Swap)
+          </a>
+        </div>
+
+        <p class="hint">
+          • <b data-t="buyASVA">Comprar ASV-A (Swap)</b> abre PancakeSwap con el token precargado. <br/>
+          • <b data-t="sendASVA">Enviar (ASV-A)</b> usa tu wallet para transferir tokens al destinatario.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div>© AURION SOVRA AI — Avatar Vivo • Web3 • ASV-A</div>
+  </footer>
+
+  <!-- Config y scripts -->
+  <script>
+    // 👉 Cambia solo si actualizas el contrato:
+    window.ASVA = {
+      token: "0x2682FA44105a60F2016FAa...", // CONTRATO ASV-A (BNB Chain)
+      chainIdHex: "0x38" // BSC mainnet
+    };
+  </script>
+  <script src="assets/lang.js"></script>
+  <script src="assets/emotion.js"></script>
+  <script src="assets/asv.js"></script>
+</body>
+</html><!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
