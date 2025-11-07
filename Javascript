@@ -1,0 +1,520 @@
+// ========================== CONFIGURACIÓN GLOBAL ==========================
+        
+        const CHAIN_ID = 56; // BNB Smart Chain Mainnet
+        const BNB_BLOCK_EXPLORER = "https://bscscan.com";
+
+        // Contratos Reales Proporcionados
+        const ASV_TOKEN_ADDRESS = "0x2682FA44105a60F2016FAa8909eA82d3d427bfFc";
+        const USAGE_CONTRACT_ADDRESS = "0xA4D491094B00629e8A61f4CF8e1feFE532f2e262";
+        const recipientAddress = "0xdE2c5802797cBb19c3318b2Ed09A58B61b385228"; // Dirección de Tesorería
+
+        // *************** CRÍTICO: PLACEHOLDERS PENDIENTES ***************
+        const AI_GATEWAY_URL = "https://TU-URL-DE-REPLIT-AQUI.replit.app/api/ai-response";
+        const BOND_NFT_CONTRACT = "0x...CONTRATO_NFT_DEL_LAZO_NEURONAL_REAL..."; // Sustituir por la dirección real
+
+        // Constantes Técnicas
+        const ASV_TOKEN_DECIMALS = 18;
+        const COST_ASV_ADVANCED = 0.5;
+        const COST_ASV_AUDIT_PROTOCOL = 5.0;
+
+        // ABIs Mínimos para Ethers.js
+        const ASV_TOKEN_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function allowance(address owner, address spender) view returns (uint256)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function transfer(address to, uint256 amount) returns (bool)",
+            "function transferFrom(address from, address to, uint256 amount) returns (bool)"
+        ];
+        // ABI Mínimo para el NFT (balanceOf)
+        const NFT_ABI = [
+            "function balanceOf(address owner) view returns (uint256)"
+        ];
+
+        // ========================== VARIABLES DE ESTADO ==========================
+
+        let provider;
+        let signer;
+        let currentAccount = null;
+        let hasBondNFT = false;
+
+        let vitality = {
+            energy: 100,
+            happiness: 50,
+            bond: 10,
+            tokenPriceUSD: 0.15 // Precio simulado inicial
+        };
+
+
+        // ========================== REFERENCIAS DOM ==========================
+
+        const connectButton = document.getElementById('connectButton');
+        const disconnectButton = document.getElementById('disconnectButton');
+        const walletStatus = document.getElementById('walletStatus');
+        const accountAddressSpan = document.getElementById('accountAddress');
+        const bnbBalanceSpan = document.getElementById('bnbBalance');
+        const asvBalanceSpan = document.getElementById('asvBalance');
+        const asvAllowanceSpan = document.getElementById('asvAllowance');
+        const treasuryBalanceSpan = document.getElementById('treasuryBalance');
+        
+        const sendButton = document.getElementById('sendButton');
+        const sendAmountInput = document.getElementById('sendAmount');
+        const essenceInput = document.getElementById('essenceInput');
+        const sendEssenceButton = document.getElementById('sendEssenceButton');
+        const approveTokenButton = document.getElementById('approveTokenButton');
+        const addTokenButton = document.getElementById('addTokenButton');
+        const mintBondButton = document.getElementById('mintBondButton');
+
+        const logContainer = document.getElementById('logContainer');
+        const energyLevelSpan = document.getElementById('energyLevel');
+        const happinessLevelSpan = document.getElementById('happinessLevel');
+        const bondLevelSpan = document.getElementById('bondLevel');
+        const vitalityBar = document.getElementById('vitalityBar');
+        const currentCostSpan = document.getElementById('currentCost');
+
+
+        // ========================== FUNCIONES DE UTILIDAD ==========================
+
+        function log(message) {
+            const p = document.createElement('p');
+            const now = new Date().toLocaleTimeString();
+            p.textContent = `[${now}] ${message}`;
+            logContainer.appendChild(p);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function speak(message) {
+            log(`Matriz ASV: "${message}"`);
+            updateAvatarVisualState('speaking');
+            setTimeout(() => {
+                updateAvatarVisualState('listening');
+            }, 3000); // 3 segundos simulados de respuesta
+        }
+
+        function updateAvatarVisualState(state) {
+            // Desactiva todos los avatares
+            document.querySelectorAll('.avatar-state').forEach(img => img.classList.remove('active'));
+            // Activa el estado solicitado
+            const targetId = `avatar${state.charAt(0).toUpperCase() + state.slice(1)}`;
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.classList.add('active');
+            } else {
+                document.getElementById('avatarDefault').classList.add('active');
+            }
+        }
+
+        function setThinkingState() {
+            updateAvatarVisualState('thinking');
+            log("Matriz procesando...");
+        }
+        
+        function updateVitality(delta) {
+            vitality.energy = Math.max(0, Math.min(100, vitality.energy + delta));
+            
+            // Simulación de felicidad/bond basada en energía
+            if (delta < 0) {
+                vitality.happiness = Math.max(0, vitality.happiness - 5);
+            } else {
+                vitality.happiness = Math.min(100, vitality.happiness + 2);
+            }
+        }
+
+        function updateBond(level) {
+            vitality.bond = level;
+            // El resto de la lógica de bond está en checkBondNFTStatus
+        }
+
+        function updateTokenPrice() {
+            // Simulación de fluctuación de precio para el ASV-A
+            const fluctuation = (Math.random() - 0.5) * 0.01; // +/- 1%
+            vitality.tokenPriceUSD = Math.max(0.01, vitality.tokenPriceUSD + fluctuation);
+            log(`Precio ASV-A actualizado: $${vitality.tokenPriceUSD.toFixed(4)} USD`);
+        }
+
+        function updateUI() {
+            // Actualización de barras de estado
+            energyLevelSpan.textContent = vitality.energy;
+            happinessLevelSpan.textContent = vitality.happiness;
+            bondLevelSpan.textContent = vitality.bond;
+            vitalityBar.style.width = `${vitality.energy}%`;
+
+            // Actualización del Costo basado en el prompt
+            const prompt = essenceInput.value.trim().toLowerCase();
+            const isAudit = prompt.includes("auditar") || prompt.includes("auditoria") || prompt.includes("analizar contrato");
+            const currentCost = isAudit ? COST_ASV_AUDIT_PROTOCOL : COST_ASV_ADVANCED;
+            currentCostSpan.textContent = currentCost;
+            
+            // Actualización del estado de la interfaz por conexión
+            if (currentAccount) {
+                connectButton.style.display = 'none';
+                disconnectButton.disabled = false;
+                essenceInput.disabled = false;
+                sendEssenceButton.disabled = false;
+                approveTokenButton.disabled = false;
+                mintBondButton.disabled = !hasBondNFT;
+                sendButton.disabled = false;
+            } else {
+                connectButton.style.display = 'block';
+                disconnectButton.disabled = true;
+                essenceInput.disabled = true;
+                sendEssenceButton.disabled = true;
+                approveTokenButton.disabled = true;
+                sendButton.disabled = true;
+                accountAddressSpan.textContent = "N/A";
+            }
+        }
+
+
+        // ========================== FUNCIONES DE WEB3 ==========================
+
+        async function connectWallet() {
+            if (!window.ethereum) {
+                speak("Error: No se detectó una wallet Web3 (MetaMask/TrustWallet).");
+                return;
+            }
+
+            try {
+                // Solicitar acceso a la cuenta
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (accounts.length === 0) {
+                    speak("Conexión rechazada. Por favor, apruebe el acceso.");
+                    return;
+                }
+                
+                // Configurar Proveedor y Signer
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                currentAccount = accounts[0];
+
+                // Verificar la red (debe ser BNB Smart Chain)
+                const network = await provider.getNetwork();
+                if (network.chainId != CHAIN_ID) {
+                    speak("Red incorrecta. Por favor, cambie a la BNB Smart Chain (Mainnet).");
+                    // Aquí se podría añadir la lógica para solicitar el cambio de red
+                    currentAccount = null; 
+                    signer = null;
+                    return;
+                }
+
+                log(`Wallet conectada: ${currentAccount}`);
+                walletStatus.textContent = `Wallet: Conectada (${currentAccount.substring(0, 6)}...)`;
+
+                // Subscripción a cambios (cuenta, red)
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                window.ethereum.on('chainChanged', () => window.location.reload());
+
+                // Cargar datos de la wallet y del tesoro
+                await updateWalletData(currentAccount);
+                await updateTreasuryData();
+                await checkBondNFTStatus();
+                speak("Núcleo ASV enlazado. Bienvenid@, R-M-P.");
+
+            } catch (error) {
+                console.error("Error al conectar la wallet:", error);
+                speak("Fallo en la conexión. Verifique MetaMask y la red BNB.");
+            } finally {
+                updateUI();
+            }
+        }
+
+        function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                handleDisconnect();
+            } else {
+                currentAccount = accounts[0];
+                updateWalletData(currentAccount);
+                log(`Cuenta cambiada a: ${currentAccount}`);
+            }
+        }
+
+        function handleDisconnect() {
+            currentAccount = null;
+            signer = null;
+            provider = null;
+            walletStatus.textContent = "Wallet: Desconectada";
+            accountAddressSpan.textContent = "N/A";
+            bnbBalanceSpan.textContent = "0.00 BNB";
+            asvBalanceSpan.textContent = "0.00 ASV-A";
+            asvAllowanceSpan.textContent = "0.00 ASV-A";
+            log("Wallet desconectada.");
+            updateUI();
+            // Remover listeners si es posible, aunque al recargar es más limpio
+            // window.ethereum.removeListener('accountsChanged', handleAccountsChanged); 
+        }
+
+        async function updateBalance(account) {
+            if (!provider) return;
+            try {
+                // Balance de BNB
+                const bnbBalanceRaw = await provider.getBalance(account);
+                const bnbBalanceFormatted = ethers.formatEther(bnbBalanceRaw);
+                bnbBalanceSpan.textContent = `${bnbBalanceFormatted.slice(0, 8)} BNB`;
+
+                // Balance de ASV-A
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, provider);
+                const asvBalanceRaw = await tokenContract.balanceOf(account);
+                const asvBalanceFormatted = ethers.formatUnits(asvBalanceRaw, ASV_TOKEN_DECIMALS);
+                asvBalanceSpan.textContent = `${asvBalanceFormatted.slice(0, 8)} ASV-A`;
+
+            } catch (error) {
+                log("Error al obtener balances.");
+            }
+        }
+
+        async function updateAllowance(account) {
+            if (!provider) return;
+            try {
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, provider);
+                const allowanceRaw = await tokenContract.allowance(account, USAGE_CONTRACT_ADDRESS);
+                const allowanceFormatted = ethers.formatUnits(allowanceRaw, ASV_TOKEN_DECIMALS);
+                asvAllowanceSpan.textContent = `${allowanceFormatted.slice(0, 8)} ASV-A`;
+            } catch (error) {
+                log("Error al obtener Allowance.");
+            }
+        }
+
+        async function updateWalletData(account) {
+            accountAddressSpan.textContent = `${account.substring(0, 6)}...${account.substring(account.length - 4)}`;
+            await updateBalance(account);
+            await updateAllowance(account);
+        }
+
+        async function sendToken() {
+            if (!signer) { speak("Conecte su wallet primero."); return; }
+            const amount = sendAmountInput.value;
+            if (!amount || isNaN(amount) || amount <= 0) {
+                speak("Ingrese una cantidad válida.");
+                return;
+            }
+
+            try {
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, signer);
+                const amountToSend = ethers.parseUnits(amount, ASV_TOKEN_DECIMALS);
+                
+                log(`Iniciando transferencia de ${amount} ASV-A a Tesorería (${recipientAddress.substring(0, 6)}...). Revise su wallet...`);
+                
+                const tx = await tokenContract.transfer(recipientAddress, amountToSend);
+                sendButton.disabled = true;
+                await tx.wait();
+
+                log(`Transacción exitosa! Hash: ${tx.hash.substring(0, 20)}...`);
+                speak("Transferencia de ASV-A a Tesorería completada.");
+                
+                sendAmountInput.value = '';
+                await updateWalletData(currentAccount);
+
+            } catch (error) {
+                log("Error o cancelación de la transferencia.");
+            } finally {
+                sendButton.disabled = false;
+            }
+        }
+
+        // ------------------------ FUNCIÓN DE LLAMADA A LA IA ------------------------
+
+        async function callAdvancedAI(prompt, cost, isAudit) {
+            try {
+                // Simulación de la firma de autenticación (Opcional en la práctica, pero buen protocolo)
+                const signature = await signer.signMessage(`ASV-AI-Request-${currentAccount}-${Date.now()}`);
+
+                const response = await fetch(AI_GATEWAY_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${signature}` // Token de autenticación de Web3
+                    },
+                    body: JSON.stringify({
+                        user_address: currentAccount,
+                        prompt: prompt,
+                        cost: cost,
+                        is_audit: isAudit,
+                        system_role: "Aurion Sovra AI Matriz (ASV): Experto formal en Web3/BNB Chain, auditoría de contratos y riesgo de wallet. Responde con precisión técnica.",
+                    })
+                });
+
+                const data = await response.json(); 
+
+                if (response.ok) {
+                    if (data.status === 'ok') {
+                        return data.ai_response;
+                    } else {
+                        // Manejo de errores de negocio o de la IA
+                        return `Error de la IA: ${data.message || 'Respuesta desconocida del Gateway.'}`;
+                    }
+                } else {
+                    // Manejo de errores HTTP (ej. 500 Internal Server Error)
+                    return `Error HTTP ${response.status}: El Gateway no respondió correctamente. ${data.message || ''}`;
+                }
+
+            } catch (error) {
+                console.error('Error al llamar al Gateway de IA:', error);
+                return `ERROR CRÍTICO de Conexión: No se pudo contactar al Gateway. ${error.message}`;
+            }
+        }
+
+        // ------------------------ FUNCIÓN PRINCIPAL DE INTERACCIÓN CON IA (Esencia) ------------------------
+
+        async function sendEssence() {
+            if (!signer) { speak("Por favor, conecte su wallet Web3 para interactuar con la Matriz."); return; }
+
+            const prompt = essenceInput.value.trim();
+            if (!prompt) { speak("Ingrese un comando o consulta."); return; }
+
+            essenceInput.value = '';
+            sendEssenceButton.disabled = true;
+            setThinkingState();
+            log(`Usuario: ${prompt}`);
+
+            const isAuditCommand = prompt.toLowerCase().includes("auditar contrato") || prompt.toLowerCase().includes("auditoria");
+            const cost = isAuditCommand ? COST_ASV_AUDIT_PROTOCOL : COST_ASV_ADVANCED;
+            log(`Costo de Esencia: ${cost} ASV-A (Audit: ${isAuditCommand ? 'Sí' : 'No'}).`);
+
+            try {
+                // 1. Simulación de la Llamada de Pago (TransferFrom)
+                log("Simulando debitación de Esencia (ASV-A) desde el Contrato de Uso...");
+                // **NOTA:** Aquí iría el código real de la llamada al Contrato de Uso para debitar los tokens.
+
+                // 2. Llamada al Gateway de IA
+                const aiResponseText = await callAdvancedAI(prompt, cost, isAuditCommand);
+
+                // 3. Procesar Respuesta
+                speak(aiResponseText);
+                updateVitality(-2); // Pequeña reducción por uso
+                await updateWalletData(currentAccount); // Refrescar saldos
+
+            } catch (error) {
+                log("Error en la ejecución de Esencia.");
+                speak("Fallo en la conexión o pago. Verifique la red y su aprobación de ASV-A.");
+            } finally {
+                sendEssenceButton.disabled = false;
+                updateAvatarVisualState('listening'); // Volver a estado de escucha
+                updateUI();
+            }
+        }
+
+
+        // ------------------------ UTILIDADES ADICIONALES ------------------------
+
+        async function approveToken() {
+            if (!signer) { log("Wallet no conectada."); return; }
+            // Aprobar una cantidad muy grande (Max Int)
+            const amountToApprove = ethers.parseUnits("10000000000000000000000000", ASV_TOKEN_DECIMALS); 
+
+            try {
+                log("Iniciando aprobación de ASV-A para el Contrato de Uso. Revise su wallet...");
+                approveTokenButton.disabled = true;
+
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, signer);
+                const tx = await tokenContract.approve(USAGE_CONTRACT_ADDRESS, amountToApprove);
+                await tx.wait();
+
+                log("Aprobación de token confirmada.");
+                speak("Aprobación completada. Puedes usar la Esencia de la Matriz.");
+                await updateAllowance(currentAccount);
+
+            } catch (error) {
+                log("Transacción de aprobación cancelada o fallida.");
+                approveTokenButton.disabled = false;
+            }
+        }
+
+        async function updateTreasuryData() {
+            if (!provider) return;
+            try {
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, provider);
+                const treasuryBalanceRaw = await tokenContract.balanceOf(recipientAddress);
+                const treasuryBalanceFormatted = ethers.formatUnits(treasuryBalanceRaw, ASV_TOKEN_DECIMALS);
+                treasuryBalanceSpan.textContent = `${treasuryBalanceFormatted.slice(0, 8)} ASV-A`;
+            } catch(e) {
+                treasuryBalanceSpan.textContent = "Error de lectura";
+            }
+        }
+        
+        async function checkBondNFTStatus() {
+            // Se asume que el NFT solo está en la BNB Chain
+            if (!provider || !BOND_NFT_CONTRACT || BOND_NFT_CONTRACT.includes('CONTRATO_NFT_DEL_LAZO_NEURONAL_REAL')) {
+                log("NFT Bond Contract no configurado. Función de Bond inactiva.");
+                hasBondNFT = false;
+                updateBond(10); // Bond por defecto al conectar
+                return;
+            }
+
+            try {
+                const nftContract = new ethers.Contract(BOND_NFT_CONTRACT, NFT_ABI, provider);
+                const balance = await nftContract.balanceOf(currentAccount);
+                hasBondNFT = balance > 0;
+
+                if (hasBondNFT) {
+                    updateBond(100); // Lazo completo si tienes el NFT
+                    mintBondButton.textContent = "✅ Bond NFT Poseído";
+                    mintBondButton.disabled = true;
+                    speak("Lazo Neuronal Establecido. Acceso total.");
+                } else {
+                    mintBondButton.textContent = "🖨️ Mint Bond NFT";
+                    updateBond(10); // Bond base
+                }
+                updateUI();
+            } catch (e) {
+                log("Error al verificar estado del Bond NFT.");
+            }
+        }
+
+        // Función para agregar el token a la wallet
+        async function addTokenToWallet() {
+            if (!window.ethereum || !window.ethereum.request) return;
+
+            try {
+                const success = await window.ethereum.request({
+                    method: 'wallet_watchAsset',
+                    params: {
+                        type: 'ERC20',
+                        options: {
+                            address: ASV_TOKEN_ADDRESS,
+                            symbol: 'ASV-A',
+                            decimals: ASV_TOKEN_DECIMALS,
+                            image: 'https://rmpsorva.github.io/assets/asv-a-logo.png', // URL de un logo (Opcional)
+                        },
+                    },
+                });
+
+                if (success) {
+                    log('ASV-A añadido a su wallet.');
+                    speak('Token ASV-A registrado en tu interfaz.');
+                } else {
+                    log('El usuario rechazó añadir el token.');
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+
+        // ========================== ESCUCHADORES DE EVENTOS ==========================
+
+        connectButton.addEventListener('click', connectWallet);
+        disconnectButton.addEventListener('click', handleDisconnect);
+        sendButton.addEventListener('click', sendToken);
+        sendEssenceButton.addEventListener('click', sendEssence);
+        approveTokenButton.addEventListener('click', approveToken);
+        mintBondButton.addEventListener('click', () => speak("Función de Mint pendiente."));
+        addTokenButton.addEventListener('click', addTokenToWallet);
+
+        // Inicialización y temporizadores
+        setInterval(updateTokenPrice, 5000); 
+        setInterval(updateUI, 100); 
+
+        // Actualizar precio y UI al cargar
+        updateTokenPrice();
+        updateUI();
+        
+        // Manejo de la tecla Enter en el campo de Esencia
+        essenceInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendEssence();
+            }
+        });
+        
+        // Configurar el enlace de BscScan
+        const bscScanLink = document.getElementById('bscScanLink');
+        bscScanLink.setAttribute('href', `${BNB_BLOCK_EXPLORER}/address/${ASV_TOKEN_ADDRESS}`);
