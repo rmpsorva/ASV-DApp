@@ -72,5 +72,11 @@
 <!-- Movimiento y Reacciones del Avatar -->
 <script src="js/avatar_life_core.js"></script>
 
+<script>
+  // Bucle de respiración y presencia
+  setInterval(() => {
+    window.dispatchEvent(new CustomEvent("ASV_PRESENCE_TICK"));
+  }, 3000);
+</script>
 </body>
 </html>
