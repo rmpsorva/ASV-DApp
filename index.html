@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASV-DApp • Aurion Sovra AI • BNB Chain</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js" type="application/javascript"></script>
+    
+    <link rel="stylesheet" href="styles/styles.css">
+    
+</head>
+<body>
+    <header role="banner">
+        <h1>ASV-DApp <span class="subtitle">• Aurion Sovra AI • BNB</span></h1>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <p id="tokenPrice" style="margin: 0; font-weight: bold; color: var(--halo);">ASV-A: $--</p>
+            <button id="connectButton" aria-label="Conectar wallet">Conectar Wallet</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="avatar-interface" aria-labelledby="avatar-heading">
+            <h2 id="avatar-heading">Matriz Aurion Sovra (ASV)</h2>
+            <div id="avatarVisualContainer" class="canvas-wrap">
+                <img id="avatarDefault" src="assets/avatar-default.jpg" alt="Avatar Normal" class="avatar-state active">
+                <img id="avatarListening" src="assets/avatar-listening.jpg" alt="Avatar Escuchando" class="avatar-state">
+                <img id="avatarSpeaking" src="assets/avatar-speaking.jpg" alt="Avatar Hablando" class="avatar-state">
+                <img id="avatarThinking" src="assets/avatar-thinking.jpg" alt="Avatar Pensando" class="avatar-state">
+                <img id="avatarHappy" src="assets/avatar-happy.jpg" alt="Avatar Feliz" class="avatar-state">
+                
+                <div id="vitalityBar" class="vitality-bar"></div>
+            </div>
+
+            <div class="status-panel">
+                <p>Energía: <span id="energy">100</span>% | Lazo Neuronal (Bond): <span id="bond">0</span>%</p>
+                <div class="interaction-form">
+                    <input type="text" id="essenceInput" placeholder="Introduce tu comando o consulta (ASV Essence)..." autofocus>
+                    <button id="sendEssenceButton">Enviar Esencia</button>
+                </div>
+            </div>
+            
+            <div class="log-container" id="logContainer">
+                </div>
+        </section>
+
+        <div class="panels-wrap">
+
+            <section class="panel" aria-labelledby="wallet-heading">
+                <h2 id="wallet-heading">Wallet y Utilidades</h2>
+                <div class="wallet-info">
+                    <p>Cuenta: <span id="account" aria-live="polite">—</span></p>
+                    <p>Red: <span id="network" aria-live="polite">—</span></p>
+                    <p>BNB: <span id="balanceBNB" aria-live="polite">—</span></p>
+                    <p>ASV-A: <span id="balanceToken" aria-live="polite">—</span></p>
+                    <p style="font-style: italic; color: #777;">Tesorería: <span id="treasuryBalance" aria-live="polite">Cargando...</span></p>
+                    <p>Aprobación para IA: <span id="tokenAllowance" aria-live="polite">---</span></p>
+
+                    <div class="utility-buttons">
+                        <button id="disconnectButton" class="secondary" disabled>❌ Desconectar</button>
+                        <button id="approveTokenButton" title="Aprobar el uso de ASV-A" disabled>✅ Aprobar Token</button>
+                        <button id="mintBondButton" title="Acuñar NFT de Lazo Neuronal" disabled>🖨️ Mint Bond NFT</button>
+                        <button id="addTokenButton" title="Añadir ASV-A a Metamask" disabled>➕ Añadir ASV-A</button>
+                        <a id="bscScanLink" target="_blank" style="text-decoration: none;">
+                            <button id="viewContractButton">🔎 Ver Contrato</button>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel" aria-labelledby="payments-heading">
+                <h2 id="payments-heading">Pagos y Swap (ASV-A)</h2>
+                <div class="payment-form">
+                    <h3>Enviar ASV-A a Tesorería</h3>
+                    <input type="number" id="amount" placeholder="Cantidad de ASV-A a enviar">
+                    <button id="sendButton">Enviar Token</button>
+
+                    <hr class="separator">
+
+                    <h3>Comprar (Swap)</h3>
+                    <p class="note">Compra ASV-A en PancakeSwap usando BNB.</p>
+                    <a id="pancakeswap-link" 
+                       href="https://pancakeswap.finance/swap?outputCurrency=0x2682FA44105a60F2016FAa8909eA82d3d427bfFc" 
+                       target="_blank" 
+                       style="text-decoration: none;">
+                      <button id="pancakeswapButton" class="primary">Comprar ASV-A en DEX</button>
+                    </a>
+                </div>
+            </section>
+
+        </div>
+    </main>
+    
+    <script>
+        // ------------------------ CONSTANTES WEB3 DE PRODUCCIÓN ------------------------
+
+        const ASV_TOKEN_ADDRESS = "0x2682FA44105a60F2016FAa8909eA82d3d427bfFc"; 
+        const ASV_TOKEN_DECIMALS = 18;
+        const ASV_TOKEN_ABI = [
+          "function balanceOf(address owner) view returns (uint256)",
+          "function decimals() view returns (uint8)",
+          "function symbol() view returns (string)",
+          "function transfer(address to, uint256 amount) returns (bool)",
+          "function allowance(address owner, address spender) view returns (uint256)", 
+          "function approve(address spender, uint256 amount) returns (bool)"
+        ];
+
+        // Tesorería: Dirección que recibe los tokens del botón "Enviar Token" / Ganancias de la IA.
+        const recipientAddress = "0xdE2c5802797cBb19c3318b2Ed09A58B61b385228"; 
+
+        // Contrato de Uso: Dirección del Contrato Inteligente al que se aprueban los tokens (para el consumo de IA).
+        const USAGE_CONTRACT_ADDRESS = "0xA4D491094B00629e8A61f4CF8e1feFE532f2e262"; 
+
+        // Contrato del NFT: ¡REMPLAZAR ESTO!
+        const BOND_NFT_CONTRACT = "0x...CONTRATO_NFT_DEL_LAZO_NEURONAL_REAL..."; 
+        const NFT_ABI = ["function balanceOf(address owner) view returns (uint256)"]; 
+
+        // Red (BNB Smart Chain Mainnet)
+        const BNB_CHAIN_ID = 56;
+        const BNB_CHAIN_ID_HEX = '0x38'; 
+        const BNB_NETWORK_NAME = 'BNB Smart Chain Mainnet';
+        const BNB_RPC_URL = 'https://bsc-dataseed.binance.org/';
+        const BNB_BLOCK_EXPLORER = 'https://bscscan.com';
+        
+        // Costos de Consumo de Esencia
+        const COST_ASV_ADVANCED = 0.5; 
+        const COST_ASV_AUDIT_PROTOCOL = 5.0; 
+
+        // **NUEVO ENDPOINT SEGURO: APUNTA AL GATEWAY DE REPLIT**
+        // DEBE REEMPLAZAR ESTA URL CON LA URL DE SU GATEWAY DESPLEGADO.
+        const AI_GATEWAY_URL = "https://TU-URL-DE-REPLIT-AQUI.replit.app/api/ai-response"; 
+        
+        // ------------------------ VARIABLES GLOBALES DE ESTADO ------------------------
+        
+        let provider = null;
+        let signer = null;
+        let currentAccount = null;
+        let hasBondNFT = false; 
+        const emotional = { happy: 50, energy: 100, bond: 0 }; 
+        let speakingInterval = null;
+        const SPEAKING_FRAMES = ['avatarSpeaking', 'avatarDefault']; 
+
+        // ------------------------ ELEMENTOS DEL DOM ------------------------
+
+        const logContainer = document.getElementById('logContainer');
+        const essenceInput = document.getElementById('essenceInput');
+        const sendEssenceButton = document.getElementById('sendEssenceButton');
+        const accountSpan = document.getElementById('account');
+        const networkSpan = document.getElementById('network');
+        const balanceBNBSpan = document.getElementById('balanceBNB');
+        const balanceTokenSpan = document.getElementById('balanceToken');
+        const connectButton = document.getElementById('connectButton');
+        const disconnectButton = document.getElementById('disconnectButton');
+        const addTokenButton = document.getElementById('addTokenButton');
+        const approveTokenButton = document.getElementById('approveTokenButton');
+        const mintBondButton = document.getElementById('mintBondButton');
+        const sendButton = document.getElementById('sendButton');
+        const tokenPriceDisplay = document.getElementById('tokenPrice');
+        const tokenAllowanceSpan = document.getElementById('tokenAllowance');
+        const treasuryBalanceSpan = document.getElementById('treasuryBalance');
+        const vitalityBar = document.getElementById('vitalityBar');
+        const energySpan = document.getElementById('energy');
+        const bondSpan = document.getElementById('bond');
+
+        // Avatar Visuals
+        const avatarDefault = document.getElementById('avatarDefault');
+        const avatarListening = document.getElementById('avatarListening');
+        const avatarSpeaking = document.getElementById('avatarSpeaking');
+        const avatarThinking = document.getElementById('avatarThinking');
+        const avatarHappy = document.getElementById('avatarHappy');
+        let currentAvatarState = 'default';
+        
+        // ------------------------ LÓGICA DE UTILIDADES AVANZADAS Y WEB3 ------------------------
+
+        function log(message) {
+            const entry = document.createElement('p');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Simulación de respuesta de voz
+        function speak(text) {
+            // Limpiar cualquier animación previa
+            if (speakingInterval) {
+                clearInterval(speakingInterval);
+            }
+            
+            // Iniciar la simulación de articulación de boca
+            let frameIndex = 0;
+            speakingInterval = setInterval(() => {
+                updateAvatarVisualState(SPEAKING_FRAMES[frameIndex % SPEAKING_FRAMES.length], true); 
+                frameIndex++;
+            }, 200); 
+
+            log(`ASV Matriz: ${text}`);
+            
+            // Establecer un timeout para volver al estado de escucha/por defecto
+            setTimeout(() => {
+                clearInterval(speakingInterval);
+                speakingInterval = null;
+                updateAvatarVisualState('listening'); 
+            }, text.length * 70); 
+        }
+
+        // Control de Gestos del Avatar (con animación de frames)
+        function updateAvatarVisualState(newState, isFrameAnimation = false) {
+            if (currentAvatarState === newState && !isFrameAnimation) return;
+
+            // Desactivar todos los estados
+            [avatarDefault, avatarListening, avatarSpeaking, avatarThinking, avatarHappy].forEach(img => {
+                if (img) img.classList.remove('active');
+            });
+
+            // Activar el nuevo estado
+            let targetImg;
+            switch (newState) {
+                case 'listening': targetImg = avatarListening; break;
+                case 'speaking': targetImg = avatarSpeaking; break;
+                case 'thinking': targetImg = avatarThinking; break;
+                case 'happy': targetImg = avatarHappy; break;
+                case 'default':
+                default: targetImg = avatarDefault; break;
+            }
+            if (targetImg) targetImg.classList.add('active');
+            
+            if (!isFrameAnimation) {
+                currentAvatarState = newState;
+            }
+        }
+
+        function setThinkingState() {
+            updateAvatarVisualState('thinking');
+        }
+
+        function updateVitality(change) {
+            emotional.energy = Math.min(100, Math.max(0, emotional.energy + change));
+        }
+        
+        function updateBond(change) {
+            emotional.bond = Math.min(100, Math.max(0, emotional.bond + change));
+        }
+
+        function updateUI() {
+            energySpan.textContent = Math.round(emotional.energy);
+            bondSpan.textContent = Math.round(emotional.bond);
+            vitalityBar.style.width = emotional.energy + '%';
+
+            if (emotional.happy > 80 && currentAvatarState !== 'speaking' && currentAvatarState !== 'thinking') {
+                updateAvatarVisualState('happy');
+            } else if (currentAvatarState === 'happy' && emotional.happy <= 80) {
+                updateAvatarVisualState('default');
+            }
+        }
+        
+        function updateTokenPrice() {
+            const simulatedPrice = (1.25 + 0.05 * Math.sin(Date.now() / 100000)).toFixed(4); 
+            tokenPriceDisplay.textContent = `ASV-A: $${simulatedPrice}`;
+        }
+
+        // Lógica de Desconexión
+        function handleDisconnect() {
+            currentAccount = null;
+            signer = null;
+            provider = null;
+            accountSpan.textContent = '—';
+            networkSpan.textContent = '—';
+            balanceBNBSpan.textContent = '—';
+            balanceTokenSpan.textContent = '—';
+            tokenAllowanceSpan.textContent = '---'; 
+            treasuryBalanceSpan.textContent = '---';
+            connectButton.textContent = "Conectar Wallet";
+            connectButton.disabled = false;
+            disconnectButton.disabled = true; 
+            approveTokenButton.disabled = true; 
+            mintBondButton.disabled = true;
+            log("Wallet desconectada.");
+            updateAvatarVisualState('default');
+        }
+
+        async function checkAndSwitchNetwork() {
+            // (Lógica de Metamask para verificar y cambiar a BNB Chain)
+            if (!window.ethereum) return false;
+            // (El resto de la lógica de switch network se mantiene igual)
+            try {
+                 const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+                 if (parseInt(currentChainId, 16) === BNB_CHAIN_ID) return true;
+                 
+                 await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: BNB_CHAIN_ID_HEX }],
+                 });
+                 return true;
+            } catch(e) {
+                 log("Error: Por favor, cambie a BNB Smart Chain manualmente.");
+                 return false;
+            }
+        }
+        
+        // Lógica de Conexión de Wallet
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    connectButton.textContent = "Conectando...";
+                    connectButton.disabled = true;
+
+                    const isCorrectNetwork = await checkAndSwitchNetwork();
+                    if (!isCorrectNetwork) {
+                        connectButton.textContent = "Conectar Wallet";
+                        connectButton.disabled = false;
+                        speak("Por favor, conéctate a la red BNB Smart Chain.");
+                        return;
+                    }
+                    
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    currentAccount = accounts[0];
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    signer = await provider.getSigner();
+
+                    log("Wallet conectada: " + currentAccount);
+                    await updateWalletData(currentAccount);
+
+                    connectButton.textContent = "✅ Wallet Conectada";
+                    connectButton.disabled = true;
+                    disconnectButton.disabled = false; 
+                    mintBondButton.disabled = false;
+                    speak("Sistema Aurion Sovra activo en la red BNB. Presencia confirmada.");
+
+                    updateVitality(15);
+                    updateBond(10);
+                    updateUI();
+                    
+                    window.ethereum.on('accountsChanged', (newAccounts) => {
+                         if (newAccounts.length > 0) {
+                             updateWalletData(newAccounts[0]);
+                         } else {
+                             handleDisconnect();
+                         }
+                    });
+                    window.ethereum.on('chainChanged', () => {
+                        log(`Red cambiada. Recargando datos...`);
+                        updateWalletData(currentAccount); 
+                    });
+
+                } catch (error) {
+                    log("Error: Conexión de Wallet fallida o rechazada.");
+                    connectButton.textContent = "Conectar Wallet"; 
+                    connectButton.disabled = false;
+                }
+            } else {
+                log("Metamask/Web3 no detectado. Instale una wallet Web3.");
+            }
+        }
+        
+        // Lógica de Lectura de Datos (Saldo, Red, Allowance, NFT)
+        async function updateWalletData(account) {
+            // (La lógica de lectura de BNB, ASV-A, Tesorería y Network se mantiene igual)
+            if (!provider || !account) return;
+
+            accountSpan.textContent = `${account.slice(0, 6)}...${account.slice(-4)}`;
+
+            const network = await provider.getNetwork();
+            networkSpan.textContent = network.name;
+
+            const bnbBalance = await provider.getBalance(account);
+            balanceBNBSpan.textContent = `${ethers.formatEther(bnbBalance).slice(0, 8)} BNB`;
+
+            try {
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, provider);
+                const tokenBalanceRaw = await tokenContract.balanceOf(account);
+                balanceTokenSpan.textContent = `${ethers.formatUnits(tokenBalanceRaw, ASV_TOKEN_DECIMALS).slice(0, 8)} ASV-A`;
+            } catch (e) {
+                balanceTokenSpan.textContent = "Error al cargar ASV-A";
+            }
+            
+            await updateTreasuryData(); 
+            await updateAllowance(account);
+            await checkBondNFTStatus();
+        }
+
+        // Lógica de Envío de Token (Tesorería)
+        async function sendToken() {
+            if (!signer) { log("Wallet no conectada."); return; }
+            const amountInput = document.getElementById('amount');
+            const amount = amountInput.value;
+            if (!amount || isNaN(amount) || parseFloat(amount) <= 0) { log("Ingrese cantidad válida."); return; }
+
+            try {
+                log(`Iniciando envío de ${amount} ASV-A a Tesorería. Revise su wallet...`);
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, signer);
+                const amountToSend = ethers.parseUnits(amount, ASV_TOKEN_DECIMALS);
+
+                const tx = await tokenContract.transfer(recipientAddress, amountToSend);
+                await tx.wait();
+
+                log("Transacción de Tesorería confirmada en la Blockchain.");
+                updateVitality(5);
+                updateBond(3);
+                updateUI();
+                speak(`Transacción de ${amount} ASV-A procesada.`);
+                amountInput.value = '';
+                await updateWalletData(currentAccount); 
+            } catch (error) {
+                log("Transacción cancelada o fallida.");
+            }
+        }
+        
+        // Utilidad: Leer y actualizar el 'allowance' (Aprobación)
+        async function updateAllowance(account) {
+            if (!provider || USAGE_CONTRACT_ADDRESS.includes('CONTRATO_DE_USO')) {
+                tokenAllowanceSpan.textContent = "Contrato de Uso no definido";
+                approveTokenButton.disabled = true;
+                return;
+            }
+            try {
+                const tokenContract = new ethers.Contract(ASV_TOKEN_ADDRESS, ASV_TOKEN_ABI, provider);
+                const allowanceRaw = await tokenContract.allowance(account, USAGE_CONTRACT_ADDRESS);
+                const allowanceFormatted = ethers.formatUnits(allowanceRaw, ASV_TOKEN_DECIMALS);
+                
+                tokenAllowanceSpan.textContent = `${allowanceFormatted.slice(0, 8)} ASV-A`;
+                
+                if (parseFloat(allowanceFormatted) < 100000) { 
+                    approveTokenButton.disabled = false;
+                    approveTokenButton.textContent = "✅ Aprobar Token";
+                } else {
+                    approveTokenButton.disabled = true;
+                    approveTokenButton.textContent = "Aprobado (Alto)";
+                }
+            } catch (e) {
+                tokenAllowanceSpan.textContent = "Error de Allowance";
+            }
+        }
+
+        // LÓGICA FINAL DE LLAMADA AL GATEWAY SEGURO
+        async function callAdvancedAI(prompt, cost, isAudit) {
+            if (AI_GATEWAY_URL.includes("TU-URL-DE-REPLIT-AQUI")) {
+                await new Promise(resolve => setTimeout(resolve, 1500)); 
+                return "ERROR: URL de Gateway no configurada. El servicio tokenizado avanzado está inactivo.";
+            }
+
+            try {
+                const response = await fetch(AI_GATEWAY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        is_audit: isAudit,
+                        cost_paid: cost,
+                        system_role: "Aurion Sovra AI Matriz (ASV): Experto formal en Web3/BNB Chain, auditoría de contratos y riesgo de wallet. Responde con precisión técnica.",
+                    })
+                });
+
+                const data
