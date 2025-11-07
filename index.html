@@ -1,6 +1,57 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASV-DApp • Aurion Sovra AI • BNB Chain</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.11.1/dist/ethers.umd.min.js" type="application/javascript"></script>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+    <script>
+        // ... (CONSTANTES WEB3) ...
+        
+        // **NUEVO ENDPOINT SEGURO: ESTE DEBE APUNTAR A SU SERVIDOR DE REPLIT AL DESPLEGAR**
+        const AI_GATEWAY_URL = "https://TU-URL-DE-REPLIT-AQUI.replit.app/api/ai-response"; 
+        
+        // ... (TODO EL RESTO DEL CÓDIGO JS EXISTENTE) ...
+        
+        // **FUNCIÓN ACTUALIZADA DE LLAMADA A LA IA (LLAMA AL GATEWAY SEGURO)**
+        async function callAdvancedAI(prompt) {
+            if (AI_GATEWAY_URL.includes("TU-URL-DE-REPLIT-AQUI")) {
+                // Simulación en modo de desarrollo
+                await new Promise(resolve => setTimeout(resolve, 1500)); 
+                return "ERROR: URL de Gateway no configurada. Por favor, enlace el servidor de Replit/Backend.";
+            }
+
+            try {
+                const response = await fetch(AI_GATEWAY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        system_role: "Aurion Sovra AI Matriz (ASV): Experto formal en Web3/BNB Chain, auditoría de contratos y riesgo de wallet. Responde con precisión técnica.",
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    return `Error de Gateway: ${data.error_message || "Fallo en la comunicación con la Matriz."}`;
+                }
+                return data.text; 
+
+            } catch (error) {
+                return "Error crítico de conexión: El Gateway de la Matriz está inactivo o inaccesible.";
+            }
+        }
+        
+        // ... (FIN DEL CÓDIGO JS) ...
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="es">
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ASV-DApp • Aurion Sovra AI</title>
