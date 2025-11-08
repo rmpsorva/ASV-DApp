@@ -1,0 +1,168 @@
+/* Estilos generales */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #111;          /* Fondo oscuro */
+  color: #eee;                     /* Texto claro sobre oscuro */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* Si se activa Orbitron u otra fuente:
+     font-family: 'Orbitron', sans-serif; */
+}
+h1, h2 {
+  text-align: center;
+  color: #0ff;                     /* Títulos en cian brillante */
+}
+.container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Encabezado: título + botón conectar */
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+header h1 {
+  margin-bottom: 0.5rem;
+}
+#connectBtn {
+  background-color: #0a0;          /* Botón verde */
+  color: #fff;
+  border: none;
+  font-size: 1rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  transition: background 0.3s;
+}
+#connectBtn:hover {
+  background-color: #0c0;
+}
+#connectBtn:disabled {
+  background-color: #444;
+  cursor: not-allowed;
+}
+
+/* Alerta de red (mensaje para cambiar a BSC) */
+#networkAlert.alert {
+  color: #ff8800; /* naranja/ámbar */
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* Balance */
+#balanceSection {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+#balanceDisplay {
+  font-size: 1.2rem;
+  background: #222;
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+}
+#balanceDisplay span {
+  font-weight: bold;
+}
+
+/* Formulario de transferencia */
+#transferSection {
+  margin-bottom: 2rem;
+}
+#transferSection .form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.form-group {
+  flex: 1 1 45%;
+  display: flex;
+  flex-direction: column;
+}
+.form-group.full-row {
+  flex: 1 1 100%;
+}
+label {
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+}
+input[type="text"], input[type="number"] {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #fff;
+  color: #000;
+}
+input[type="text"]::placeholder,
+input[type="number"]::placeholder {
+  color: #888;
+}
+#sendBtn {
+  background-color: #06a;        /* Botón azul */
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+  align-self: center;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+#sendBtn:hover {
+  background-color: #08c;
+}
+#sendBtn:disabled {
+  background-color: #444;
+  cursor: not-allowed;
+}
+
+/* Mensajes de transacción (éxito o error) */
+#txMessage.message {
+  text-align: center;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+}
+#txMessage.success {
+  color: #4caf50;  /* verde éxito */
+}
+#txMessage.error {
+  color: #f44336;  /* rojo error */
+}
+
+/* Pie de página / advertencia */
+footer {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+}
+.kyc-warning {
+  color: #ffb300; /* amarillo anaranjado de advertencia */
+}
+
+/* Responsive: en pantallas pequeñas (menos de 400px), ajustar fuente */
+@media (max-width: 400px) {
+  body {
+    font-size: 0.95rem;
+  }
+  #balanceDisplay {
+    font-size: 1.1rem;
+  }
+  #transferSection .form-grid {
+    flex-direction: column;
+  }
+  .form-group {
+    flex: 1 1 auto;
+  }
+  #sendBtn {
+    font-size: 1.1rem;
+  }
+}
