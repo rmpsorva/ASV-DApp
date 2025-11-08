@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate="portalTitle">ASV-A PORTAL - Acceso PRO</title>
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+<body class="dark-mode">
+
+    <header>
+        <div class="header-content">
+            <h1 data-translate="welcome">Portal ASV-A</h1>
+            <button id="language-switch" data-lang="en">EN / ES</button>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <section class="card status-section">
+            <h2 data-translate="walletStatus">Estado de la Wallet</h2>
+            <div id="wallet-info">
+                <p data-translate="connection">Conexión:</p>
+                <span id="connection-status" class="status-indicator disconnected">🔴</span>
+                <p data-translate="address">Dirección:</p>
+                <code id="wallet-address">N/A</code>
+                <button id="connect-wallet-btn" onclick="blockchain.connectWallet()" data-translate="connectWallet">Conectar Wallet</button>
+            </div>
+            
+            <hr>
+
+            <div class="balance-info">
+                <p>ASV-A <span data-translate="balance">Balance</span>:</p>
+                <span id="asva-balance">0.00</span>
+                <span class="token-symbol">ASV-A</span>
+                <button id="verify-balance-btn" onclick="blockchain.getBalance()">🔄</button>
+            </div>
+        </section>
+
+        <section class="card pro-utilities-section">
+            <h2 data-translate="proUtilities">Utilidades PRO (ASV-A)</h2>
+
+            <div id="audit-feature" class="feature-block">
+                <h3 data-translate="auditTitle">Auditoría Avanzada y Logs</h3>
+                <p id="pro-access-msg" class="pro-feature-locked-msg" data-translate="proAccessRequired">
+                    🔒 Requiere **<span id="min-asva-amount">X.XX</span> ASV-A** en su wallet para desbloquear.
+                </p>
+                <button id="export-logs-btn" 
+                        class="pro-feature-locked" 
+                        disabled 
+                        onclick="auditLogger.exportData()" 
+                        data-translate="exportData">Exportar Logs (PRO)</button>
+            </div>
+
+            <hr>
+
+            <div class="feature-block">
+                <h3 data-translate="proPledgeTitle">Firma PRO / Nivel de Confianza</h3>
+                <p data-translate="proPledgeDesc">Firme un mensaje para ser marcado como Miembro PRO.</p>
+                <button id="sign-pledge-btn" onclick="blockchain.signProPledge()" data-translate="signPledge">Firmar Compromiso PRO</button>
+            </div>
+        </section>
+
+        <section class="card interactive-tools-section">
+            <h2 data-translate="interactiveTools">Herramientas Interactivas</h2>
+
+            <div class="feature-block">
+                <h3 data-translate="voiceTitle">Reconocimiento de Voz 🎤</h3>
+                <p data-translate="voiceDesc">Comandos estándar (Gratis) y Comandos Avanzados (Costo en ASV-A).</p>
+                <div class="voice-controls">
+                    <button id="start-voice-btn" onclick="voice.start()" data-translate="startListening">Iniciar Escucha</button>
+                    <button id="stop-voice-btn" onclick="voice.stop()" data-translate="stopListening" disabled>Detener</button>
+                    <p id="voice-status">Inactivo.</p>
+                    <p class="small-text" data-translate="voiceFeeNote">
+                        *Los comandos avanzados (ej. 'Informe VIP') requieren **<span id="vip-fee">Y.YY</span> ASV-A**.
+                    </p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="feature-block">
+                <h3 data-translate="qrTitle">Generador de QR Personalizado</h3>
+                <p data-translate="qrDesc">Genera un QR para solicitar pagos P2P en ASV-A.</p>
+                <div class="qr-input-group">
+                    <input type="number" id="qr-amount-input" placeholder="0.00 ASV-A" min="0.01">
+                    <button id="generate-qr-btn" onclick="handleGenerateQR()" data-translate="generateQR">Generar QR</button>
+                </div>
+                <div id="qr-code-display" class="qr-display-area">
+                    </div>
+            </div>
+        </section>
+
+        <div id="notification-area">
+            </div>
+
+    </main>
+
+    <footer>
+        <p>&copy; 2025 ASV-A PORTAL. BNB Chain Integration.</p>
+    </footer>
+
+    <script src="config/blockchain.json"></script>
+    <script src="config/translations.json"></script>
+    <script src="js/blockchain.js"></script>
+    <script src="js/voice-recognition.js"></script>
+    <script src="js/qr-generator.js"></script>
+    <script src="js/audit-logger.js"></script>
+    <script>
+        // Lógica de Inicialización de la Interfaz
+        
+        let config; // Variable global para la configuración cargada
+
+        // Función simulada para cargar la configuración de blockchain.json
+        async function loadConfig() {
+            try {
+                const response = await fetch('config/blockchain.json');
+                config = await response.json();
+                
+                // Actualizar la UI con los valores de configuración
+                document.getElementById('min-asva-amount').textContent = config.proAccess.minHoldAmount.toFixed(2);
+                document.getElementById('vip-fee').textContent = config.proAccess.vipCommandFee.toFixed(3);
+
+                // Inicializar la clase blockchain con la configuración
+                window.blockchain = new BlockchainHandler(config);
+                window.auditLogger = new AuditLogger();
+
+                // Intentar conexión y verificación PRO al inicio
+                await blockchain.connectWallet();
+                await checkProStatus();
+
+            } catch (error) {
+                console.error("Error al cargar la configuración:", error);
+            }
+        }
+        
+        // Verifica y actualiza el estado PRO
+        async function checkProStatus() {
+            const requiredAmount = config.proAccess.minHoldAmount;
+            const hasProAccess = await blockchain.checkProAccess(requiredAmount);
+
+            const exportBtn = document.getElementById('export-logs-btn');
+            const accessMsg = document.getElementById('pro-access-msg');
+            
+            if (hasProAccess) {
+                exportBtn.disabled = false;
+                exportBtn.classList.remove('pro-feature-locked');
+                accessMsg.classList.add('hidden');
+            } else {
+                exportBtn.disabled = true;
+                exportBtn.classList.add('pro-feature-locked');
+                accessMsg.classList.remove('hidden');
+            }
+        }
+
+        // Manejador para el QR
+        function handleGenerateQR() {
+            const amount = document.getElementById('qr-amount-input').value;
+            const address = document.getElementById('wallet-address').textContent;
+            if (amount > 0 && address !== 'N/A') {
+                qrGenerator.generatePaymentQR(address, amount, 'ASV-A', document.getElementById('qr-code-display'));
+            } else {
+                alert('Por favor, conecta la wallet e ingresa un monto válido.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
+</body>
+</html>
